@@ -1,0 +1,166 @@
+<!doctype html>
+<html manifest="manifest">
+<head>
+<style>
+	body,html {
+		font-family:Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+		font-size:24pt;
+		height:100%;
+		width:100%;
+	}
+	#contianer {
+		height:98%;
+		width:99%;
+	}
+	#self {
+		vertical-align:central;
+		background:#CCC;
+	}
+	.others {
+		width:20%;
+		height:20%;
+		background:#CCC;
+		vertical-align:central;
+	}
+	.next {
+		background:#0F0 !important;
+	}
+	.online {
+		background:#F00;
+	}
+</style>
+<script>
+	selfNo = 0;
+	online = 0;
+	next = 0;
+	fading = false;
+	refreshID = 0;
+	
+	function ajaxRequest(url, callback) {
+	//Universal AJAX request function
+	//AJAX XML Querying
+	//Template Ref:http://s25g5d4.myweb.hinet.net/Untitled-1.html
+	//the callback() will ONLY pass respone content or alert HTTP error code
+		if (window.XMLHttpRequest) {
+			var xmlHttp = new XMLHttpRequest();
+		}
+		var method = "GET";
+		xmlHttp.open("GET", url, true);
+		xmlHttp.onreadystatechange = function () {
+			if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {console.log("200");callback(xmlHttp.responseText);}
+			if (xmlHttp.status == 302 || xmlHttp.status == 301 || xmlHttp.status == 303 || xmlHttp.status == 307) {
+				console.log("[mobileTally, Debug]: ajaxRequest redirected, request again");
+				xmlHttp.open("GET", xmlHttp.getResponseHeader("Location"), true);
+			}
+			if (xmlHttp.status != 200 && xmlHttp.status != 0 && xmlHttp.status != 304) {
+				console.log("[mobileTally, Error]: ajaxRequest() HTTP Error " + xmlHttp.status);
+				return;
+			}
+		}
+			xmlHttp.send();
+	}
+	
+	function update(content) {
+		console.log(content);
+		online = content.substr(0,1);
+		next = content.substr(1,1);
+		fading = parseInt(content.substr(2,1))!=0?true:false; //Convert int to boolean by comparing
+		var self = document.getElementById("self");
+		var other = new Array();
+		other[1] = document.getElementById("other1");
+		other[2] = document.getElementById("other2");
+		other[3] = document.getElementById("other3");
+		other[4] = document.getElementById("other4");
+		other[5] = document.getElementById("other5");
+		self.innerHTML = selfNo;
+		self.style.backgroundColor = "#CCC";
+		if (selfNo == next) {
+			if (fading) {
+				self.style.backgroundColor = "#F00";
+			} else {
+				self.style.backgroundColor = "#0F0";
+			}
+		}
+		if (selfNo == online) {
+			self.style.backgroundColor = "#F00";
+		}
+
+		var j = 0;
+		for (var i=1; i<=6;i++) {
+			if (selfNo != i) {
+				j++;
+				other[j].innerHTML = i;
+				other[j].className = "others";
+				if (i == next) {
+					if (fading) {
+						other[j].classList.add("online");
+					} else {
+						other[j].classList.add("next");
+					}
+				}
+				if (i == online) {
+					other[j].className = "others";
+					other[j].classList.add("online");
+				}
+						
+			}
+		}
+		
+	}
+	
+	function request() {
+		ajaxRequest("/tally"+"?r="+Math.random(),update);
+	}
+	
+	function changeSelfNo() {
+		document.getElementById("self").addEventListener("click",showForm);
+		document.forms.item(0).style.display = "none";
+		var tmp = document.getElementById("selfNoInput").value;
+		if ((tmp >= 1) && (tmp <=6)) {
+			selfNo = tmp;
+			refreshID = setInterval(request,300);
+		}
+		return false;
+	}
+	
+	function showForm() {
+		clearInterval(refreshID);
+		document.getElementById("self").removeEventListener("click",showForm);
+		document.getElementById("self").onclick = "";
+		document.getElementById("self").innerHTML = '<form onSubmit="return changeSelfNo();" name="form1" id="form1" onClick="false"><input name="selfNoInput" style="width:400pt;height:50pt;font-size:36pt;" type="number" id="selfNoInput" placeholder="Your Camera No" value="' + selfNo +'" max="6" min="1" step="1" title="Your Camera No" maxlength="1" size="10"/><input type="submit" name="submit" id="submit" value="OK" style="font-size:36pt;width: 100pt; height:50pt;"></form>';
+		refreshID = 0;		
+	}
+	
+	function reloadToRand() {
+		if ((strpos(strtolower($_SERVER['HTTP_USER_AGENT']),"iphone")) || (!strpos(strtolower($_SERVER['HTTP_USER_AGENT']),"safari"))) {
+			alert(1);
+			if ((location.search == "") || (location.search.length <= 3)) {
+				window.location.href = location.pathname+"?r="+Math.random();
+			}
+		}
+	}
+</script>
+	<meta charset="UTF-8">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-title" content="mobileTally">
+    <link rel="apple-touch-icon" sizes="152x152" href="ioswebapp_icon.png">
+    <meta name="viewport" content="scale=1.0,user-scalable=no">
+<title>mobileTally</title>
+</head>
+
+<body onload="reloadToRand();">
+<table border="0" cellspacing="5px" cellpadding="0" id="contianer">
+  <tr>
+    <td colspan="5" align="center" id="self" onClick="showForm()">Click to beign&nbsp;</td>
+  </tr>
+  <tr>
+    <td align="center" class="others" id="other1">N/A&nbsp;</td>
+    <td align="center" class="others" id="other2">N/A&nbsp;</td>
+    <td align="center" class="others" id="other3">N/A&nbsp;</td>
+    <td align="center" class="others" id="other4">N/A&nbsp;</td>
+    <td align="center" class="others" id="other5">N/A&nbsp;</td>
+  </tr>
+</table>
+</body>
+</html>
